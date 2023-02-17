@@ -279,6 +279,183 @@ Let's now come up with a better implementation of our `divide()` method:
 
 Run the unit test now. It should all pass!
 
+## Edge Cases
+
+It may seem like we're done, but we're not - what if we tried to divide by 0?
+We know that anything divided by 0 results in not a number, so we want to guard
+against this case.
+
+In Java, when we perform division by 0 with `double` or `float` data types, an
+exception **will not be thrown**. This is because Java handles real division
+differently from integer division. When division by 0 is performed with a
+`double`, we could end up with any of the following:
+
+- `1.0 / 0.0` results in Infinity (or `Double.POSITIVE_INFINITY`).
+- `-1.0 / 0.0` results in -Infinity (or `Double.NEGATIVE_INFINITY`)
+- `0.0 / 0.0` results in NaN (or `Double.NaN`).
+
+The "why" Java throws an exception with integer division but not real division
+is out of scope for this lesson; however, if you wish to learn more, see
+[Division by Zero in Java](https://www.baeldung.com/java-division-by-zero).
+
+Back to unit testing, let's write a new unit test to guard against a division by
+zero when the dividend is positive. We'll create a new test method called
+`divisionByZero`:
+
+```java
+    @Test
+    void divisionByZero() {
+        double dividend = 8.5;
+        double divisor = 0;
+        double quotient = Calculator.divide(dividend, divisor);
+    }
+```
+
+Before we even add an assertion, set a breakpoint on the line:
+`double quotient = Calculator.divide(dividend, divisor);` Then run the debugger
+on the `divisionByZero()` test method. We can run the debugger by clicking the
+play button next to the method name and choosing "Debug divisionByZero()".
+
+![debug-unit-test](https://curriculum-content.s3.amazonaws.com/java-mod-1/unit-tests/debug-division-by-zero-test.png)
+
+Once we get to the breakpoint, we can open up the Java Visualizer plugin in
+IntelliJ and see that both the `dividend` and `divisor` variables have been
+initialized to `8.5` and `0.0` respectively. We can now click the "step-into"
+action to take us into the `Calculator.divide(dividend, divisor)` method:
+
+![unit-test-step-into](https://curriculum-content.s3.amazonaws.com/java-mod-1/unit-tests/intellij-debugger-unit-test-step-into.png)
+
+When we step-into the `divide()` method, notice that the `dividend` and
+`divisor` variables are also set in that method.
+
+![step-into-divide](https://curriculum-content.s3.amazonaws.com/java-mod-1/unit-tests/intellij-debugger-unit-test-calculator-divide-method.png)
+
+If we step-over now twice, we'll see the `quotient` variable back in the test
+`divisionByZero()` method is now set to `Infinity`. This happens when a positive
+`double` value is divided by 0:
+
+![quotient-infinity](https://curriculum-content.s3.amazonaws.com/java-mod-1/unit-tests/quotient-inifinity.png)
+
+Consider the following statement to add to the test:
+
+```java
+assertEquals(Double.POSITIVE_INFINITY, quotient);
+```
+
+To ensure that when a `double` value is divided by 0 is set to `Infinity`, we
+can do an `assertEquals(Double.POSITIVE_INFINITY, quotient);` The
+`Double.POSITIVE_INFINITY` is a `double` that contains the value of "Infinity".
+
+There are two more cases to account for when we perform division by zero with a
+`double`: when the dividend is negative and when the dividend is also 0. Let's
+add to the `divisionByZero()` test to account for these two additional cases:
+
+```java
+    @Test
+    void divisionByZero() {
+        double dividend = 8.5;
+        double divisor = 0;
+        double quotient = Calculator.divide(dividend, divisor);
+        assertEquals(Double.POSITIVE_INFINITY, quotient);
+
+        dividend = -8.5;
+        quotient = Calculator.divide(dividend, divisor);
+        assertEquals(Double.NEGATIVE_INFINITY, quotient);
+
+        dividend = 0;
+        quotient = Calculator.divide(dividend, divisor);
+        assertEquals(Double.NaN, quotient);
+    }
+```
+
+If we were to run the debugger again and step through the code, we'd see the
+`quotient` be set to `-Infinity` when the `dividend` is negative:
+
+![quotient-negative](https://curriculum-content.s3.amazonaws.com/java-mod-1/unit-tests/quotient-negative-inifinity.png)
+
+And we'd also see the `quotient` be set to `NaN` when the `dividend` is set to
+0:
+
+![quotient-nan](https://curriculum-content.s3.amazonaws.com/java-mod-1/unit-tests/quotient-nan.png)
+
+This example highlights a very important aspect of unit testing: when
+discovering new test cases to test, like we did with the case of division by
+zero, we must _add_ to the existing test, not just
+replace them. That's because our unit tests play a very significant role in
+another form of testing called **regression testing** as well.
+
+Regression testing is the idea that as we make changes to the code, we must
+continue to ensure that things that used to work are still going to work. In
+order to ensure that it works for _all_ known cases, we have to make sure
+that our **test suite**, or collection of tests, continues to test all the
+cases, even the ones that we think we already have covered.
+
+## Code Check
+
+### Calculator.java
+
+```java
+public class Calculator {
+    public static double divide(double dividend, double divisor) {
+        return dividend / divisor;
+    }
+
+    public static void main(String[] args) {
+
+    }
+}
+```
+
+### CalculatorTest.java
+
+```java
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class CalculatorTest {
+
+    @BeforeEach
+    void setUp() {
+    }
+
+    @AfterEach
+    void tearDown() {
+    }
+
+    @Test
+    void divide() {
+        double dividend = 4;
+        double divisor = 2;
+        double quotient = Calculator.divide(dividend, divisor);
+        assertEquals(2.0, quotient);
+
+        // Add another test
+        dividend = 6;
+        quotient = Calculator.divide(dividend, divisor);
+        assertEquals(3.0, quotient);
+    }
+
+    @Test
+    void divisionByZero() {
+        double dividend = 8.5;
+        double divisor = 0;
+        double quotient = Calculator.divide(dividend, divisor);
+        assertEquals(Double.POSITIVE_INFINITY, quotient);
+
+        dividend = -8.5;
+        quotient = Calculator.divide(dividend, divisor);
+        assertEquals(Double.NEGATIVE_INFINITY, quotient);
+
+        dividend = 0;
+        quotient = Calculator.divide(dividend, divisor);
+        assertEquals(Double.NaN, quotient);
+    }
+}
+```
+
 ## References
 
 [JUnit documentation](https://junit.org/junit5/docs/5.7.2/api/org.junit.jupiter.api/org/junit/jupiter/api/Assertions.html)
